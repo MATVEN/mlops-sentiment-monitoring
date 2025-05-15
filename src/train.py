@@ -44,8 +44,13 @@ def main():
     # Load dataset
     train_split = f"train[:{args.subset}]" if args.subset else "train"
     eval_split = f"test[:{int(args.subset/10)}]" if args.subset else "test"
-    train_ds = load_dataset(args.dataset, split=train_split)
-    eval_ds  = load_dataset(args.dataset, split=eval_split)
+    
+    load_kwargs = {}
+    if args.cache_dir:
+        load_kwargs["cache_dir"] = args.cache_dir
+
+    train_ds = load_dataset(args.dataset, split=train_split, **load_kwargs)
+    eval_ds  = load_dataset(args.dataset, split=eval_split, **load_kwargs)
 
     # Tokenize
     def tokenize(batch):

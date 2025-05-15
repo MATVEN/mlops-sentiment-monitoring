@@ -15,6 +15,8 @@ def parse_args():
                         help="Number of samples to use from test split")
     parser.add_argument("--output-dir", type=str, default="./evaluation",
                         help="Directory where to save metrics and plots")
+    parser.add_argument("--cache-dir", type=str, default=None,
+                    help="Directory da usare per la cache di datasets")
     return parser.parse_args()
 
 def main():
