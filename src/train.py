@@ -48,18 +48,17 @@ def main():
     if args.cache_dir:
         load_kwargs["cache_dir"] = args.cache_dir
 
-    # Load dataset with explicit cache_dir
+    # Load dataset
     train_split = f"train[:{args.subset}]" if args.subset else "train"
     eval_split = f"test[:{int(args.subset/10)}]" if args.subset else "test"
     train_ds = load_dataset(args.dataset, split=train_split, **load_kwargs)
-    eval_ds  = load_dataset(args.dataset, split=eval_split, **load_kwargs)
+    eval_ds = load_dataset(args.dataset, split=eval_split, **load_kwargs)
 
-    # Tokenize
+    # Tokenization
     def tokenize(batch):
         return tokenizer(batch["text"], truncation=True, max_length=args.max_length)
-
     tokenized_train = train_ds.map(tokenize, batched=True)
-    tokenized_eval  = eval_ds.map(tokenize, batched=True)
+    tokenized_eval = eval_ds.map(tokenize, batched=True)
 
     # Data collator & metrics
     data_collator = DataCollatorWithPadding(tokenizer)
@@ -70,7 +69,7 @@ def main():
         preds = torch.argmax(torch.tensor(logits), dim=-1)
         return metric_acc.compute(predictions=preds, references=labels)
 
-    # Training arguments
+    # TrainingArguments
     training_args = TrainingArguments(
         output_dir=args.output_dir,
         do_train=True,
@@ -100,10 +99,14 @@ def main():
         compute_metrics=compute_metrics,
     )
 
-    # Train and save
+    # Train
     trainer.train()
-    trainer.save_model()
-    print(f"✅ Training completo. Modello salvato in {args.output_dir}")
+
+    # Save model & tokenizer
+    trainer.save_model(args.output_dir)
+    tokenizer.save_pretrained(args.output_dir)
+
+    print(f"✅ Training completo. Modello e tokenizer salvati in {args.output_dir}")
 
 if __name__ == "__main__":
     main()

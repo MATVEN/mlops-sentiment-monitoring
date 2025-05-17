@@ -19,11 +19,6 @@ def parse_args():
         help="Path to the fine-tuned model directory"
     )
     parser.add_argument(
-        "--model-name", type=str,
-        default="cardiffnlp/twitter-roberta-base-sentiment-latest",
-        help="Original HuggingFace model identifier (to load config)"
-    )
-    parser.add_argument(
         "--dataset", type=str, default="yelp_polarity",
         help="Datasets load identifier"
     )
@@ -50,14 +45,15 @@ def main():
     args = parse_args()
     os.makedirs(args.output_dir, exist_ok=True)
 
-    # Load config from original model, then weights from model-dir
-    config = AutoConfig.from_pretrained(args.model_name)
+    # Load config and model from model-dir
+    config = AutoConfig.from_pretrained(args.model_dir)
     model = AutoModelForSequenceClassification.from_pretrained(
         args.model_dir,
         config=config,
         ignore_mismatched_sizes=True
     )
-    tokenizer = AutoTokenizer.from_pretrained(args.model_name)
+    # Load tokenizer from model-dir
+    tokenizer = AutoTokenizer.from_pretrained(args.model_dir)
 
     # Load test dataset
     split = f"test[:{args.subset}]" if args.subset else "test"
