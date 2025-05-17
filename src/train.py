@@ -27,6 +27,8 @@ def parse_args():
     parser.add_argument("--epochs", type=int, default=3,
                         help="Number of training epochs")
     parser.add_argument("--learning-rate", type=float, default=2e-5)
+    parser.add_argument("--cache-dir", type=str, default=None,
+                        help="Directory to use for HuggingFace dataset cache")
     parser.add_argument("--output-dir", type=str, default="./results",
                         help="Output directory for checkpoints and logs")
     return parser.parse_args()
@@ -41,31 +43,34 @@ def main():
     )
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
 
-    # Load dataset
-    train_split = f"train[:{args.subset}]" if args.subset else "train"
-    eval_split = f"test[:{int(args.subset/10)}]" if args.subset else "test"
-    
+    # Prepare cache kwargs
     load_kwargs = {}
     if args.cache_dir:
         load_kwargs["cache_dir"] = args.cache_dir
 
+    # Load dataset with explicit cache_dir
+    train_split = f"train[:{args.subset}]" if args.subset else "train"
+    eval_split = f"test[:{int(args.subset/10)}]" if args.subset else "test"
     train_ds = load_dataset(args.dataset, split=train_split, **load_kwargs)
     eval_ds  = load_dataset(args.dataset, split=eval_split, **load_kwargs)
 
     # Tokenize
     def tokenize(batch):
-        return tokenizer(batch['text'], truncation=True, max_length=args.max_length)
+        return tokenizer(batch["text"], truncation=True, max_length=args.max_length)
+
     tokenized_train = train_ds.map(tokenize, batched=True)
     tokenized_eval  = eval_ds.map(tokenize, batched=True)
 
-    # Prepare
+    # Data collator & metrics
     data_collator = DataCollatorWithPadding(tokenizer)
-    metric_acc = evaluate.load('accuracy')
+    metric_acc = evaluate.load("accuracy")
+
     def compute_metrics(eval_pred):
         logits, labels = eval_pred
         preds = torch.argmax(torch.tensor(logits), dim=-1)
         return metric_acc.compute(predictions=preds, references=labels)
 
+    # Training arguments
     training_args = TrainingArguments(
         output_dir=args.output_dir,
         do_train=True,
@@ -95,10 +100,10 @@ def main():
         compute_metrics=compute_metrics,
     )
 
-    # Train
+    # Train and save
     trainer.train()
     trainer.save_model()
-    print(f"Training completo. Modello salvato in {args.output_dir}")
+    print(f"✅ Training completo. Modello salvato in {args.output_dir}")
 
 if __name__ == "__main__":
     main()
