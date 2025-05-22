@@ -1,0 +1,52 @@
+name: Train & Evaluate Sentiment Model
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install accelerate evaluate
+
+      - name: Prepare cache folders
+        run: |
+          mkdir -p cache/hf_datasets
+          mkdir -p model_checkpoints/best_model
+
+      - name: Run training
+        run: |
+          python src/train.py \
+            --epochs 3 \
+            --batch_size 16 \
+            --max_length 64 \
+            --lr 3e-5 \
+            --output_dir model_checkpoints/best_model
+
+      - name: Run evaluation
+        run: |
+          python src/eval_model.py \
+            --model_dir model_checkpoints/best_model \
+            --batch_size 16 \
+            --max_length 64
+
+      - name: Upload best model artifact
+        if: ${{ success() }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: best-sentiment-model
+          path: model_checkpoints/best_model
