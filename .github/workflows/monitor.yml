@@ -1,0 +1,29 @@
+name: Monitor Sentiment & Trigger Retraining
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # ogni giorno a mezzanotte UTC
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install snscrape fastapi uvicorn requests pandas scikit-learn transformers evaluate gh-cli
+
+      - name: Run monitor script
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}  # PAT con workflow scope
+        run: |
+          python src/monitor.py
