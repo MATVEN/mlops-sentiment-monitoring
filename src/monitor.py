@@ -5,10 +5,6 @@ import os
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(project_root)
 
-# Disabilita verifica SSL (solo in Colab/dev)
-import ssl
-ssl._create_default_https_context = ssl._create_unverified_context
-
 import json
 import numpy as np
 import pandas as pd
@@ -16,7 +12,6 @@ import subprocess
 from datetime import datetime
 from fastapi.testclient import TestClient
 from src.api import app
-import snscrape.modules.twitter as sntwitter
 
 # Configurazione
 COMPANY_QUERY = "MachineInnovators Inc"
@@ -27,11 +22,10 @@ HISTORY_FILE = os.path.join(project_root, "sentiment_history.json")
 client = TestClient(app)
 
 def fetch_tweets(query, count):
-    tweets = []
-    for i, tweet in enumerate(sntwitter.TwitterSearchScraper(f'{query} lang:en').get_items()):
-        if i >= count: break
-        tweets.append(tweet.content)
-    return tweets
+    """
+    STUB di sviluppo: ritorna testi fittizi invece di collezionare da Twitter.
+    """
+    return [f"Sample tweet about {query} #{i}" for i in range(count)]
 
 def predict_sentiments(texts):
     labels = []
@@ -58,12 +52,7 @@ def check_drift(old_dist, new_dist, threshold):
     return diff > threshold
 
 def main():
-    try:
-        texts    = fetch_tweets(COMPANY_QUERY, NUM_TWEETS)
-    except Exception as e:
-        print(f"⚠️  Fetch tweets failed: {e}")
-        return
-
+    texts    = fetch_tweets(COMPANY_QUERY, NUM_TWEETS)
     labels   = predict_sentiments(texts)
     new_dist = compute_distribution(labels)
     today    = datetime.utcnow().date().isoformat()
@@ -74,12 +63,12 @@ def main():
     history["last_dist"] = new_dist
     save_history(history)
 
+    # Stampa per debug
+    print("🗓", today, "– distribution:", new_dist)
+
     if old_dist and check_drift(old_dist, new_dist, THRESHOLD):
         print(f"⚠️ Drift detected Δ={sum(abs(new_dist.get(k,0)-old_dist.get(k,0)) for k in set(old_dist)|set(new_dist)):.3f}, triggering retraining")
-        subprocess.run([
-            "gh", "workflow", "run", "train_eval.yml",
-            "--repo", "MATVEN/mlops-sentiment-monitoring"
-        ], check=True)
+        # subprocess.run([...])  # commentato in Colab
     else:
         print("✅ No drift detected.")
 
