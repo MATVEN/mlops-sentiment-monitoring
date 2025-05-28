@@ -9,8 +9,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -20,10 +19,10 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install snscrape fastapi uvicorn requests pandas scikit-learn transformers evaluate gh-cli
+          pip install -r requirements.txt
 
       - name: Run monitor script
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}  # PAT con workflow scope
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           python src/monitor.py

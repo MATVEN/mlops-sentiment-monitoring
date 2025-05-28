@@ -1,38 +1,37 @@
 #!/usr/bin/env python3
-import sys
-import os
-# patch per import src
+import os, sys, json, subprocess
+from datetime import datetime
+
+import numpy as np
+import pandas as pd
+from fastapi.testclient import TestClient
+
+# Config & patch per sviluppo Colab
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.append(project_root)
 
-import json
-import numpy as np
-import pandas as pd
-import subprocess
-from datetime import datetime
-from fastapi.testclient import TestClient
-from src.api import app
+# Disabilita SSL in Colab (rimuovere o proteggere in produzione)
+if "/content" in project_root:
+    import ssl
+    ssl._create_default_https_context = ssl._create_unverified_context
 
-# Configurazione
+# Costanti
 COMPANY_QUERY = "MachineInnovators Inc"
-NUM_TWEETS = 100
-THRESHOLD = 0.1
-HISTORY_FILE = os.path.join(project_root, "sentiment_history.json")
+NUM_TWEETS    = 100
+THRESHOLD     = 0.1
+HISTORY_FILE  = os.path.join(project_root, "sentiment_history.json")
 
+# Client API
+from src.api import app
 client = TestClient(app)
 
+# Funzioni
 def fetch_tweets(query, count):
-    """
-    STUB di sviluppo: ritorna testi fittizi invece di collezionare da Twitter.
-    """
+    # STUB: testi fittizi per sviluppo
     return [f"Sample tweet about {query} #{i}" for i in range(count)]
 
 def predict_sentiments(texts):
-    labels = []
-    for txt in texts:
-        resp = client.post("/predict", json={"text": txt})
-        labels.append(resp.json()["label"])
-    return labels
+    return [client.post("/predict", json={"text": t}).json()["label"] for t in texts]
 
 def compute_distribution(labels):
     return pd.Series(labels).value_counts(normalize=True).to_dict()
@@ -48,9 +47,9 @@ def save_history(history):
 
 def check_drift(old_dist, new_dist, threshold):
     all_keys = set(old_dist) | set(new_dist)
-    diff = sum(abs(new_dist.get(k,0)-old_dist.get(k,0)) for k in all_keys)
-    return diff > threshold
+    return sum(abs(new_dist.get(k,0) - old_dist.get(k,0)) for k in all_keys) > threshold
 
+# Main
 def main():
     texts    = fetch_tweets(COMPANY_QUERY, NUM_TWEETS)
     labels   = predict_sentiments(texts)
@@ -63,12 +62,10 @@ def main():
     history["last_dist"] = new_dist
     save_history(history)
 
-    # Stampa per debug
     print("🗓", today, "– distribution:", new_dist)
-
     if old_dist and check_drift(old_dist, new_dist, THRESHOLD):
-        print(f"⚠️ Drift detected Δ={sum(abs(new_dist.get(k,0)-old_dist.get(k,0)) for k in set(old_dist)|set(new_dist)):.3f}, triggering retraining")
-        # subprocess.run([...])  # commentato in Colab
+        print("⚠️ Drift detected, triggering retraining (stub)")
+        # subprocess.run([...])
     else:
         print("✅ No drift detected.")
 
