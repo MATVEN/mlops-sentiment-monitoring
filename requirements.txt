@@ -5,5 +5,9 @@ scikit-learn
 pandas
 numpy
 accelerate
+evaluate
 fastapi
 uvicorn
+requests
+snscrape
+certifi
