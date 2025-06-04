@@ -68,7 +68,7 @@ docker run -d -p 8000:8000 \
   mlops-sentiment-api
 ```
 
-📍 Endpoint disponibile su: `http://localhost:8000/predict`
+📍 L’API sarà disponibile su: http://localhost:8000/predict`
 
 ### Test dell’API
 ```bash
@@ -83,6 +83,9 @@ curl -X POST http://localhost:8000/predict \
 ```
 
 ---
+
+**Nota:** il Dockerfile è multi-stage e non include i pesi del modello all’interno dell’immagine.
+Per fornire i pesi al container, monta la cartella locale model_checkpoints/test_model come volume (opzione -v).
 
 ## ⚙️ 3. CI/CD Workflow
 
