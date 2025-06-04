@@ -1,0 +1,71 @@
+name: Train & Evaluate Sentiment Model
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Cache pip
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Cache HuggingFace datasets
+        uses: actions/cache@v3
+        with:
+          path: cache/hf_datasets
+          key: ${{ runner.os }}-hf_datasets
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install accelerate evaluate
+
+      - name: Lint with flake8
+        run: |
+          pip install flake8
+          flake8 src/
+
+      - name: Type check with mypy
+        run: |
+          pip install mypy
+          mypy src/
+
+      - name: Run training
+        run: |
+          python src/train.py \
+            --epochs 3 \
+            --batch_size 16 \
+            --max_length 64 \
+            --lr 3e-5 \
+            --output_dir model_checkpoints/best_model
+
+      - name: Run evaluation
+        run: |
+          python src/eval_model.py \
+            --model_dir model_checkpoints/best_model \
+            --batch_size 16 \
+            --max_length 64
+
+      - name: Upload best model artifact
+        if: ${{ success() }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: best-sentiment-model
+          path: model_checkpoints/best_model
