@@ -4,8 +4,6 @@
 
 Questo repository implementa un'infrastruttura **MLOps completa** per monitorare in modo continuo la reputazione aziendale sui social media, con analisi automatizzata del sentiment e **retraining del modello basato sul concetto di drift**.
 
----
-
 ## 🔧 Caratteristiche principali
 
 1. **Modello di sentiment analysis** basato su [cardiffnlp/twitter-roberta-base-sentiment-latest](https://huggingface.co/cardiffnlp/twitter-roberta-base-sentiment-latest).
@@ -13,7 +11,24 @@ Questo repository implementa un'infrastruttura **MLOps completa** per monitorare
 3. **API FastAPI** containerizzata via Docker per predizione in tempo reale.
 4. **Monitoraggio giornaliero** del sentiment + trigger automatico di retraining.
 
----
+### 🔑 Accesso al repository privato
+
+Per eseguire il notebook è necessario avere accesso al repository GitHub `mlops-sentiment-monitoring`.
+
+#### Passaggi:
+
+1. Assicurati di essere **collaboratore del repository** (il proprietario deve aggiungerti).
+2. Genera un **GitHub Personal Access Token (classic)** da [questa pagina](https://github.com/settings/tokens) con almeno i permessi:
+   - `repo` (per leggere il repository)
+3. Quando esegui il notebook, **inserisci il token in modo sicuro** nella cella iniziale (non sarà visibile né salvato).
+
+#### Esempio nel notebook:
+```python
+from getpass import getpass
+import os
+
+GITHUB_TOKEN = getpass("Inserisci il tuo GitHub Token: ")
+os.environ["GITHUB_TOKEN"] = GITHUB_TOKEN
 
 ## 📦 1. Setup e Addestramento
 
@@ -121,6 +136,7 @@ Verifica i nuovi tweet con `snscrape`, predice il sentiment e calcola distribuzi
   },
   "last_dist": {"positive": 0.55, "neutral": 0.30, "negative": 0.15}
 }
+
 ```
 
 ### 4.2 Trigger retraining
@@ -148,9 +164,8 @@ mlops-sentiment-monitoring/
 │   └── monitor.py       # Drift detection e retraining
 ├── requirements.txt
 └── README.md
-```
 
----
+```
 
 ## ✅ Note finali
 
