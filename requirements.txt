@@ -1,0 +1,13 @@
+transformers        # Modelli pre-addestrati e tokenizzazione
+datasets            # Gestione dataset (es. HuggingFace)
+torch               # PyTorch per modellazione e training
+scikit-learn        # Metriche e utilità di machine learning
+pandas              # Manipolazione di dati tabellari
+numpy               # Operazioni numeriche
+accelerate          # Supporto all'accelerazione hardware
+evaluate            # Valutazione dei modelli
+fastapi             # Creazione dell'API per la predizione
+uvicorn             # Server ASGI per l'esecuzione dell'API
+requests            # Richieste HTTP client-side
+snscrape            # Estrazione di tweet pubblici
+certifi             # Gestione dei certificati per HTTPS

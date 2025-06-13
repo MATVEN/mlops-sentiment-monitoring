@@ -1,0 +1,57 @@
+name: Monitor Sentiment & Trigger Retraining
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # ogni giorno a mezzanotte UTC
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install snscrape requests pandas
+
+      - name: Run monitor script
+        id: run_monitor
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python src/monitor.py --use_testclient
+
+      - name: Notify Drift Detected
+        if: ${{ steps.run_monitor.outcome == 'failure' }}
+        uses: peter-evans/create-issue-from-file@v3
+        with:
+          title: "Drift detected - retraining triggered"
+          content: |
+            The monitor script detected a drift in sentiment distribution on ${{ github.event.schedule }}.
+            A retraining job has been triggered.
+          labels: "drift, retraining"
+
+  retrain:
+    needs: monitor
+    if: needs.monitor.result == 'failure'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Trigger Retraining Workflow
+        run: |
+          echo "Retraining workflow can be triggered here or via repository_dispatch."
+          # Esempio: curl -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          #   -d '{"event_type": "trigger_retrain"}' \
+          #   https://api.github.com/repos/${{ github.repository }}/dispatches
